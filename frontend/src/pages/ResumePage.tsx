@@ -1,7 +1,7 @@
-import { useState, type ComponentType, type ReactNode } from 'react'
+import { useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Download, LoaderCircle, Mail, MapPin, Phone } from 'lucide-react'
-import { api, type Profile, type Resume } from '../api'
+import { ChevronDown, Download, LoaderCircle, Mail, MapPin, Phone } from 'lucide-react'
+import { api, type Education, type Profile, type Resume } from '../api'
 import { Section, Heading, Entry, Status, Sheet } from '../components/Section'
 import Markdown from '../components/Markdown'
 import SocialIcon from '../components/SocialIcon'
@@ -80,6 +80,23 @@ function Contacts({ p }: { p: Profile }) {
   )
 }
 
+function EducationList({ items }: { items: Education[] }) {
+  return (
+    <>
+      {items.map((e) => (
+        <div key={e.id} className="mb-5 text-sm">
+          <div className="uppercase tracking-wider text-ink">
+            {[e.degree, e.field_of_study].filter(Boolean).join(', ')}
+          </div>
+          <div className="italic text-ink/60 mt-1">{e.institution}</div>
+          <div className="italic text-ink/60">{fmtRange(e.start_date, e.end_date)}</div>
+          {e.description && <Markdown className="prose-sm mt-1">{e.description}</Markdown>}
+        </div>
+      ))}
+    </>
+  )
+}
+
 function SideHeading({ title }: { title: string }) {
   return <h2 className="text-xl uppercase tracking-[0.3em] font-medium mb-5">{title}</h2>
 }
@@ -105,6 +122,7 @@ async function downloadPdf(data: Resume) {
 export default function ResumePage() {
   useTitle('Resume')
   const [busy, setBusy] = useState(false)
+  const mainRef = useRef<HTMLDivElement>(null)
   const { data, isPending, error } = useQuery({
     queryKey: ['resume'],
     queryFn: api.resume,
@@ -126,40 +144,33 @@ export default function ResumePage() {
 
   return (
     <div className="flex-1 grid md:grid-cols-[22rem_1fr] cursor-default">
-      <aside className="bg-panel px-8 py-12 space-y-12">
-        <div className="text-center">
-          <Photo name={profile.name} />
-          <h1 className="font-serif text-4xl mt-6 leading-tight">
-            {first} {rest.length > 0 && <span className="text-accent">{rest.join(' ')}</span>}
-          </h1>
-          {profile.title && (
-            <p className="uppercase tracking-[0.3em] text-xs text-ink/70 mt-3">{profile.title}</p>
-          )}
-        </div>
+      <aside className="bg-panel px-8 py-12 flex flex-col min-h-[calc(100svh-5rem)] md:min-h-0 md:block">
+        <div className="my-auto md:my-0 space-y-12">
+          <div className="text-center">
+            <Photo name={profile.name} />
+            <h1 className="font-serif text-4xl mt-6 leading-tight">
+              {first} {rest.length > 0 && <span className="text-accent">{rest.join(' ')}</span>}
+            </h1>
+            {profile.title && (
+              <p className="uppercase tracking-[0.3em] text-xs text-ink/70 mt-3">{profile.title}</p>
+            )}
+          </div>
 
-        <div>
-          <SideHeading title="Contacts" />
-          <Contacts p={profile} />
+          <div>
+            <SideHeading title="Contacts" />
+            <Contacts p={profile} />
+          </div>
         </div>
 
         {education.length > 0 && (
-          <div>
+          <div className="hidden md:block mt-12">
             <SideHeading title="Education" />
-            {education.map((e) => (
-              <div key={e.id} className="mb-5 text-sm">
-                <div className="uppercase tracking-wider text-ink">
-                  {[e.degree, e.field_of_study].filter(Boolean).join(', ')}
-                </div>
-                <div className="italic text-ink/60 mt-1">{e.institution}</div>
-                <div className="italic text-ink/60">{fmtRange(e.start_date, e.end_date)}</div>
-                {e.description && <Markdown className="prose-sm mt-1">{e.description}</Markdown>}
-              </div>
-            ))}
+            <EducationList items={education} />
           </div>
         )}
 
         {proficiencies.length > 0 && (
-          <div>
+          <div className="hidden md:block mt-12">
             <SideHeading title="Proficiencies" />
             {proficiencies.map((c) => (
               <div key={c.id} className="mb-4 text-sm">
@@ -169,9 +180,17 @@ export default function ResumePage() {
             ))}
           </div>
         )}
+
+        <button
+          className="no-print md:hidden mt-10 self-center text-ink/50 hover:text-accent animate-bounce"
+          aria-label="Scroll to experience"
+          onClick={() => mainRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        >
+          <ChevronDown size={32} />
+        </button>
       </aside>
 
-      <div className="relative px-10 py-12 sm:px-14">
+      <div ref={mainRef} className="relative px-8 py-12 sm:px-14 scroll-mt-4">
         <button
           className="no-print absolute top-4 right-4 p-2 text-ink/60 hover:text-accent disabled:cursor-wait disabled:opacity-40"
           title="Download PDF"
@@ -205,6 +224,14 @@ export default function ResumePage() {
               </Entry>
             ))}
           </Section>
+        )}
+
+        {education.length > 0 && (
+          <div className="md:hidden">
+            <Section title="Education">
+              <EducationList items={education} />
+            </Section>
+          </div>
         )}
       </div>
     </div>
