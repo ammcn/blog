@@ -3,17 +3,44 @@
   "services": {
     "web": {
       "root": "frontend/",
-      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+      "rewrites": [
+        {
+          "source": "/(.*)",
+          "destination": "/index.html"
+        }
+      ],
+      "framework": "vite"
     },
     "api": {
       "root": "backend/",
+      "framework": "django",
       "buildCommand": "python manage.py migrate --noinput"
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": { "service": "api" } },
-    { "source": "/admin(.*)", "destination": { "service": "api" } },
-    { "source": "/static/(.*)", "destination": { "service": "api" } },
-    { "source": "/(.*)", "destination": { "service": "web" } }
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/admin(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/static/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "web"
+      }
+    }
   ]
 }
