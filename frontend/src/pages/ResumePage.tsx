@@ -135,7 +135,7 @@ export default function ResumePage() {
       if (!snapArmed.current || !mainRef.current) return
       const top = mainRef.current.getBoundingClientRect().top
       if (top < -200) snapArmed.current = false
-      else if (up && top > 48) {
+      else if (up && top > 120) {
         snapArmed.current = false
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
