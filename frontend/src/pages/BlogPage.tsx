@@ -45,7 +45,7 @@ export default function BlogPage() {
         <ul className="divide-y divide-neutral-200">
           {shown.map((p) => (
             <li key={p.slug} className="py-7 first:pt-0">
-              <div className="flex justify-between items-baseline gap-4">
+              <div className="flex justify-between items-center gap-4">
                 <Link to={`/blog/${p.slug}`} className="font-serif text-2xl hover:text-accent">
                   {p.title}
                 </Link>

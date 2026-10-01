@@ -46,7 +46,7 @@ const s = StyleSheet.create({
   small: { fontSize: 8.5, color: muted },
   caps: { fontSize: 8.5, letterSpacing: 1, textTransform: 'uppercase', marginTop: 8 },
   role: { fontSize: 11.5, marginTop: 4 },
-  sub: { color: muted, marginBottom: 4 },
+  sub: { color: '#717171', fontFamily: 'Helvetica-Oblique', marginBottom: 4 },
   bullet: { flexDirection: 'row', marginLeft: 6, marginBottom: 2 },
   body: { color: '#555' },
   section: { marginBottom: 16 },
@@ -143,8 +143,10 @@ export default function ResumePdf({ data, photo }: { data: Resume; photo?: strin
                   <Text style={[s.caps, { marginTop: 0 }]}>
                     {[e.degree, e.field_of_study].filter(Boolean).join(', ')}
                   </Text>
-                  <Text style={s.small}>{e.institution}</Text>
-                  <Text style={s.small}>{fmtRange(e.start_date, e.end_date)}</Text>
+                  <Text style={[s.small, { fontFamily: 'Helvetica-Oblique' }]}>{e.institution}</Text>
+                  <Text style={[s.small, { fontFamily: 'Helvetica-Oblique' }]}>
+                    {fmtRange(e.start_date, e.end_date)}
+                  </Text>
                 </View>
               ))}
             </>
@@ -178,7 +180,9 @@ export default function ResumePdf({ data, photo }: { data: Resume; photo?: strin
                   <Text style={s.role}>{e.role}</Text>
                   <Text style={s.sub}>
                     {[e.company, e.location].filter(Boolean).join(', ')} |{' '}
-                    {fmtRange(e.start_date, e.end_date)}
+                    <Text style={{ fontFamily: 'Helvetica-Oblique' }}>
+                      {fmtRange(e.start_date, e.end_date)}
+                    </Text>
                   </Text>
                   {e.description && <Description md={e.description} />}
                 </View>

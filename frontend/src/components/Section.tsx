@@ -41,7 +41,7 @@ export function Entry({
         <h3 className="font-medium text-lg text-ink">{heading}</h3>
         {aside && <span className="text-sm text-ink/60 whitespace-nowrap">{aside}</span>}
       </div>
-      {subheading && <div className="text-ink/60">{subheading}</div>}
+      {subheading && <div className="italic text-[#717171]/60">{subheading}</div>}
       {children}
     </div>
   )

@@ -150,8 +150,8 @@ export default function ResumePage() {
                 <div className="uppercase tracking-wider text-ink">
                   {[e.degree, e.field_of_study].filter(Boolean).join(', ')}
                 </div>
-                <div className="text-ink/60 mt-1">{e.institution}</div>
-                <div className="text-ink/60">{fmtRange(e.start_date, e.end_date)}</div>
+                <div className="italic text-ink/60 mt-1">{e.institution}</div>
+                <div className="italic text-ink/60">{fmtRange(e.start_date, e.end_date)}</div>
                 {e.description && <Markdown className="prose-sm mt-1">{e.description}</Markdown>}
               </div>
             ))}
