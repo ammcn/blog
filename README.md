@@ -49,22 +49,34 @@ draft: true
 Body in Markdown (GFM + syntax-highlighted code). React components allowed.
 ```
 
-## Deploying
+## Deploying (Vercel)
 
-**Frontend → Vercel.** Set the project root to `frontend/`. `vercel.json`
-rewrites `/api/*` to the backend and everything else to `index.html`; replace
-`REPLACE-WITH-BACKEND-HOST` with the API's hostname. Drafts are stripped from
-production builds. Commit `public/photo.jpg` for the photo and OG image.
+One Vercel project runs both halves as [Services](https://vercel.com/docs/services):
+`vercel.json` at the repo root declares `web` (Vite, `frontend/`) and `api`
+(Django, `backend/`) and routes `/api`, `/admin`, and `/static` to Django and
+everything else to the SPA. Both share one domain, so no CORS or cross-site cookies.
 
-**Backend → any Docker host** (Render, Railway, Fly, …) using `backend/Dockerfile`.
-It runs migrations on boot and serves with gunicorn and whitenoise. Required env
-vars are listed in `backend/.env.example`: `SECRET_KEY`, `ALLOWED_HOSTS`,
-`DATABASE_URL` (Postgres), `NUM_PROXIES=1`, and `FRONTEND_ORIGINS` only if the
-frontend calls the API cross-origin instead of via the Vercel rewrite. With
-`DEBUG` off, cookies are secure-only and HSTS is on.
+1. Import the repo into Vercel. Leave the root directory at the repo root.
+2. Add a Postgres database from the Vercel marketplace (Neon's free tier works).
+   It sets `DATABASE_URL`. Use the pooled connection string if offered.
+3. Set `SECRET_KEY` (long and random) and `DEBUG=False` in project env vars.
+   Set `ALLOWED_HOSTS` to your custom domain once you attach one; `*.vercel.app`
+   is accepted automatically.
+4. Deploy. The backend build runs migrations; Vercel runs `collectstatic` itself
+   and serves the admin's assets from its CDN.
+5. Create your login once, from your machine, against the production database:
 
-After the first deploy: `python manage.py createsuperuser` on the host, then
-enter the resume at `https://<api-host>/admin/`.
+   ```sh
+   cd backend
+   npx vercel env pull .env.local        # writes DATABASE_URL etc.
+   set -a; source .env.local; set +a
+   .venv/bin/python manage.py createsuperuser
+   ```
+
+   Then enter the resume at `https://<your-domain>/admin/`.
+
+Drafts are stripped from production builds. Commit `frontend/public/photo.jpg`
+for the photo and OG image. `backend/Dockerfile` remains for any Docker host.
 
 ## API
 

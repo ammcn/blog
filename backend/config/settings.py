@@ -21,6 +21,11 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'] if DEBUG else [])
 
+# On Vercel, accept the deployment and production hostnames without manual configuration.
+ON_VERCEL = env.bool('VERCEL', default=False)
+if ON_VERCEL:
+    ALLOWED_HOSTS += ['.vercel.app'] + [h for h in [env('VERCEL_PROJECT_PRODUCTION_URL', default='')] if h]
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -132,7 +137,7 @@ MAILERS = {
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
-    'NUM_PROXIES': env.int('NUM_PROXIES', default=0),
+    'NUM_PROXIES': env.int('NUM_PROXIES', default=1 if ON_VERCEL else 0),
 }
 
 # The frontend's dev server and the deployed site. Empty when the API is reached only via same-origin rewrites.
@@ -141,6 +146,8 @@ CORS_ALLOWED_ORIGINS = FRONTEND_ORIGINS
 CORS_ALLOW_HEADERS = ['content-type', 'x-client-id', 'x-csrftoken']
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = FRONTEND_ORIGINS + [f'https://{h}' for h in ALLOWED_HOSTS if not h.startswith('.')]
+if ON_VERCEL:
+    CSRF_TRUSTED_ORIGINS.append('https://*.vercel.app')
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

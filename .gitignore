@@ -12,3 +12,6 @@ frontend/dist/
 .DS_Store
 backend/staticfiles/
 .env
+
+.vercel/
+.env.local
