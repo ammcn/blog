@@ -1,4 +1,4 @@
-import { useRef, useState, type ComponentType, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, Download, LoaderCircle, Mail, MapPin, Phone } from 'lucide-react'
 import { api, type Education, type Profile, type Resume } from '../api'
@@ -123,6 +123,26 @@ export default function ResumePage() {
   useTitle('Resume')
   const [busy, setBusy] = useState(false)
   const mainRef = useRef<HTMLDivElement>(null)
+  const snapArmed = useRef(false)
+  const lastY = useRef(0)
+
+  // After the mobile arrow scrolls to the main column, a small upward scroll snaps back to the top.
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY
+      const up = y < lastY.current
+      lastY.current = y
+      if (!snapArmed.current || !mainRef.current) return
+      const top = mainRef.current.getBoundingClientRect().top
+      if (top < -200) snapArmed.current = false
+      else if (up && top > 48) {
+        snapArmed.current = false
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
   const { data, isPending, error } = useQuery({
     queryKey: ['resume'],
     queryFn: api.resume,
@@ -184,7 +204,11 @@ export default function ResumePage() {
         <button
           className="no-print md:hidden mt-10 self-center text-ink/50 hover:text-accent animate-bounce"
           aria-label="Scroll to experience"
-          onClick={() => mainRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onClick={() => {
+            lastY.current = window.scrollY
+            snapArmed.current = true
+            mainRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }}
         >
           <ChevronDown size={32} />
         </button>
