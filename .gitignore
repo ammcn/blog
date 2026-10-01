@@ -15,3 +15,5 @@ backend/staticfiles/
 
 .vercel/
 .env.local
+.vercel
+.env*
