@@ -124,16 +124,35 @@ export default function ResumePage() {
   const [busy, setBusy] = useState(false)
   const mainRef = useRef<HTMLDivElement>(null)
   const snapArmed = useRef(false)
+  const jumping = useRef(false)
   const lastY = useRef(0)
 
-  // After the mobile arrow scrolls to the main column, a small upward scroll snaps back to the top.
+  const goToMain = () => {
+    lastY.current = window.scrollY
+    jumping.current = true
+    snapArmed.current = true
+    mainRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setTimeout(() => (jumping.current = false), 1200)
+  }
+
+  // Mobile: scrolling down from the hero (or pressing the arrow) jumps to the main column;
+  // a deliberate upward scroll right after snaps back to the top.
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY
       const up = y < lastY.current
+      const down = y > lastY.current
       lastY.current = y
-      if (!snapArmed.current || !mainRef.current) return
+      if (!mainRef.current || !window.matchMedia('(max-width: 767px)').matches) return
       const top = mainRef.current.getBoundingClientRect().top
+      if (jumping.current) {
+        if (top <= 24) jumping.current = false
+        return
+      }
+      if (!snapArmed.current) {
+        if (down && y > 80 && top > 200) goToMain()
+        return
+      }
       if (top < -200) snapArmed.current = false
       else if (up && top > 120) {
         snapArmed.current = false
@@ -204,11 +223,7 @@ export default function ResumePage() {
         <button
           className="no-print md:hidden mt-10 self-center text-ink/50 hover:text-accent animate-bounce"
           aria-label="Scroll to experience"
-          onClick={() => {
-            lastY.current = window.scrollY
-            snapArmed.current = true
-            mainRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }}
+          onClick={goToMain}
         >
           <ChevronDown size={32} />
         </button>
