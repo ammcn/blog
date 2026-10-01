@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+@plugin "@tailwindcss/typography";
+@import 'highlight.js/styles/github.css';
+
+@theme {
+  --font-sans: 'Gill Sans', 'Gill Sans MT', 'Trebuchet MS', 'Segoe UI', sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+  --color-sand: #d5b894;
+  --color-panel: #e8e8e8;
+  --color-accent: #cc8a3a;
+  --color-ink: #3a3a3a;
+}
+
+body {
+  @apply bg-sand text-ink font-sans tracking-wide;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+@media print {
+  body {
+    @apply bg-white;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+.prose :where(code)::before,
+.prose :where(code)::after {
+  content: none;
+}
+
+.prose :where(pre) {
+  @apply bg-transparent p-0 border border-neutral-200 rounded-md text-base text-ink;
+}

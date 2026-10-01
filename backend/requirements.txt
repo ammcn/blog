@@ -1,0 +1,9 @@
+Django>=6.1,<6.2
+djangorestframework>=3.18,<4
+django-cors-headers>=4.9,<5
+django-admin-sortable2>=2.2
+django-environ>=0.12
+dj-database-url>=2.3
+psycopg[binary]>=3.2
+whitenoise>=6.9
+gunicorn>=23
