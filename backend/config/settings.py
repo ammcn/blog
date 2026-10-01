@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'resume',
     'likes',
     'accounts',
+    'blog',
 ]
 
 MIDDLEWARE = [

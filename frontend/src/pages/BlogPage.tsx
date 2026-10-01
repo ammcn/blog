@@ -11,7 +11,7 @@ export default function BlogPage() {
   useTitle('Blog')
   const [params, setParams] = useSearchParams()
   const tag = params.get('tag')
-  const { posts, tags } = usePosts()
+  const { posts, tags, isPending, error } = usePosts()
   const shown = tag ? posts.filter((p) => p.tags.includes(tag)) : posts
   const likes = useLikes(posts.map((p) => p.slug))
   const canEdit = useCanEdit()
@@ -39,7 +39,9 @@ export default function BlogPage() {
       </header>
 
       <div className="mt-12">
-        {shown.length === 0 && <Status>Nothing here yet.</Status>}
+        {isPending && <Status>Loading…</Status>}
+        {error && <Status>Could not load posts: {error.message}</Status>}
+        {!isPending && !error && shown.length === 0 && <Status>Nothing here yet.</Status>}
         <ul className="divide-y divide-neutral-200">
           {shown.map((p) => (
             <li key={p.slug} className="py-7 first:pt-0">

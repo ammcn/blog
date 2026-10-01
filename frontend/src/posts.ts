@@ -1,34 +1,30 @@
-import type { ComponentType } from 'react'
-import { useCanEdit } from './auth'
+import { useQuery } from '@tanstack/react-query'
+import { postsApi } from './api'
+import { useMe } from './auth'
 
-export interface Post {
-  slug: string
-  title: string
-  date: string
-  excerpt: string
-  tags: string[]
-  draft: boolean
-  Content: ComponentType
-}
-
-const modules = import.meta.glob<typeof import('*.mdx')>('./posts/*.mdx', { eager: true })
-
-const allPosts: Post[] = Object.entries(modules)
-  .map(([path, m]) => ({
-    slug: path.replace(/^.*\//, '').replace(/\.mdx$/, ''),
-    title: m.frontmatter.title,
-    date: m.frontmatter.date,
-    excerpt: m.frontmatter.excerpt ?? '',
-    tags: m.frontmatter.tags ?? [],
-    draft: m.frontmatter.draft ?? false,
-    Content: m.default,
-  }))
-  .sort((a, b) => b.date.localeCompare(a.date))
-
-/** Drafts are visible only to a signed-in editor (and never in production builds). */
+/** Post lists are keyed by auth state so drafts appear or vanish on sign-in and sign-out. */
 export function usePosts() {
-  const canEdit = useCanEdit()
-  const posts = allPosts.filter((p) => !p.draft || canEdit)
+  const me = useMe()
+  const authed = !!me.data?.authenticated
+  const q = useQuery({ queryKey: ['posts', authed], queryFn: postsApi.list, enabled: !me.isPending })
+  const posts = q.data ?? []
   const tags = [...new Set(posts.flatMap((p) => p.tags))].sort()
-  return { posts, tags }
+  return { ...q, posts, tags }
 }
+
+export function usePost(slug: string | undefined) {
+  const me = useMe()
+  const authed = !!me.data?.authenticated
+  return useQuery({
+    queryKey: ['post', slug, authed],
+    queryFn: () => postsApi.get(slug!),
+    enabled: !!slug && !me.isPending,
+    retry: false,
+  })
+}
+
+export const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')

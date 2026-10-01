@@ -46,8 +46,4 @@ export function useLogout() {
   })
 }
 
-/** Editing is possible only in dev (the file writer lives in the Vite server) and only when signed in. */
-export const useCanEdit = () => {
-  const me = useMe()
-  return import.meta.env.DEV && !!me.data?.authenticated
-}
+export const useCanEdit = () => !!useMe().data?.authenticated

@@ -59,3 +59,42 @@ async function get<T>(path: string): Promise<T> {
 export const api = {
   resume: () => get<Resume>('/resume/'),
 }
+
+export interface PostSummary {
+  slug: string
+  title: string
+  date: string
+  excerpt: string
+  tags: string[]
+  draft: boolean
+  updated_at: string
+}
+
+export interface Post extends PostSummary {
+  body: string
+}
+
+export type PostInput = Omit<Post, 'updated_at'>
+
+const csrf = () => document.cookie.match(/(?:^|; )csrftoken=([^;]+)/)?.[1] ?? ''
+
+async function send<T>(path: string, method: string, body?: unknown): Promise<T> {
+  const res = await fetch(`/api${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf() },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null)
+    throw new Error(detail ? JSON.stringify(detail) : `${res.status} ${res.statusText}`)
+  }
+  return res.status === 204 ? (undefined as T) : res.json()
+}
+
+export const postsApi = {
+  list: () => get<PostSummary[]>('/blog/posts/'),
+  get: (slug: string) => get<Post>(`/blog/posts/${slug}/`),
+  create: (data: PostInput) => send<Post>('/blog/posts/', 'POST', data),
+  update: (slug: string, data: Partial<PostInput>) => send<Post>(`/blog/posts/${slug}/`, 'PATCH', data),
+  remove: (slug: string) => send<void>(`/blog/posts/${slug}/`, 'DELETE'),
+}

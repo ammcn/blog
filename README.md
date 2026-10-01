@@ -1,7 +1,7 @@
 # blog
 
-Resume-styled personal site with a blog. Django + DRF serve the resume content
-(edited in the admin); blog posts are MDX files committed to the repo.
+Resume-styled personal site with a blog. Django + DRF serve the resume and the
+blog posts; the React frontend renders them and includes a sign-in-gated editor.
 
 ## Run
 
@@ -26,28 +26,11 @@ Edit resume content at http://localhost:8000/admin/.
 
 ## Writing a post
 
-Sign in at http://localhost:5173/secret-login (not linked from the UI) with a Django
-user from `createsuperuser`. The nav then shows **Write** and each post gets an
-**edit** link. Fill in the title, date, tags, and body (Markdown with live preview) and hit Save. That
-writes `frontend/src/posts/<slug>.mdx`; each post in the blog list has an
-**edit** link. Commit the file to publish. Tick **Draft** to keep it out of
-production builds.
-
-The editor and its `/__posts` endpoint exist only in `npm run dev`, and the
-endpoint checks the Django session before touching disk. You can
-also just create the file by hand:
-
-```mdx
----
-title: My post
-date: 2026-10-01
-excerpt: One line shown in the list.
-tags: [thing, other]
-draft: true
----
-
-Body in Markdown (GFM + syntax-highlighted code). React components allowed.
-```
+Sign in at `/secret-login` (not linked from the UI) with a Django user from
+`createsuperuser`. The nav then shows **Write**, and each post gets an **Edit**
+link. Posts are Markdown (GFM, syntax-highlighted code) stored in the database,
+so you can write and publish from the live site. Tick **Draft** to keep a post
+visible only to you. The Django admin at `/admin/` can edit posts too.
 
 ## Deploying (Vercel)
 
@@ -75,11 +58,11 @@ everything else to the SPA. Both share one domain, so no CORS or cross-site cook
 
    Then enter the resume at `https://<your-domain>/admin/`.
 
-Drafts are stripped from production builds. Commit `frontend/public/photo.jpg`
-for the photo and OG image. `backend/Dockerfile` remains for any Docker host.
+Commit `frontend/public/photo.jpg` for the photo and OG image. `backend/Dockerfile` remains for any Docker host.
 
 ## API
 
 - `GET /api/resume/` — profile (with `socials`), experience, education, proficiencies
+- `GET /api/blog/posts/`, `GET /api/blog/posts/<slug>/` — published posts; drafts included for a signed-in session. `POST`, `PATCH`, `DELETE` need a session.
 - `GET /api/auth/me/`, `POST /api/auth/login/`, `POST /api/auth/logout/` — session auth
 - `GET /api/likes/?slugs=a,b` — heart counts; `POST /api/likes/<slug>/toggle/` toggles the caller's heart. Both read an anonymous `X-Client-Id` header the frontend keeps in localStorage.

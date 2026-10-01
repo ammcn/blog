@@ -1,61 +1,86 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import MDEditor, { commands } from '@uiw/react-md-editor'
 import '@uiw/react-md-editor/markdown-editor.css'
-import MdxPreview from '../components/MdxPreview'
+import { postsApi, type PostInput } from '../api'
+import { slugify, usePost } from '../posts'
+import Markdown from '../components/Markdown'
 import { Heading, Sheet, Status } from '../components/Section'
-import { postsApi, slugify, type PostMeta } from '../postSource'
+import { useTitle } from '../useTitle'
 
 const today = () => new Date().toISOString().slice(0, 10)
 const field = 'w-full border border-neutral-300 rounded px-3 py-2 text-sm bg-white focus:outline-accent'
+const blank = (): PostInput => ({
+  slug: '',
+  title: '',
+  date: today(),
+  excerpt: '',
+  tags: [],
+  draft: true,
+  body: '',
+})
 
 export default function WritePage() {
   const { slug: existing } = useParams()
+  const loaded = usePost(existing)
+  useTitle(existing ? 'Edit post' : 'New post')
+
+  if (existing && loaded.isPending)
+    return (
+      <Sheet>
+        <Status>Loading…</Status>
+      </Sheet>
+    )
+  if (existing && (loaded.error || !loaded.data))
+    return (
+      <Sheet>
+        <Status>No such post.</Status>
+      </Sheet>
+    )
+  return <Editor key={existing ?? 'new'} existing={existing} initial={loaded.data ?? blank()} />
+}
+
+function Editor({ existing, initial }: { existing?: string; initial: PostInput }) {
   const navigate = useNavigate()
-  const [meta, setMeta] = useState<PostMeta>({ title: '', date: today(), excerpt: '', tags: [], draft: true })
-  const [tagsText, setTagsText] = useState('')
-  const [slug, setSlug] = useState('')
+  const qc = useQueryClient()
+  const [post, setPost] = useState<PostInput>(initial)
+  const [tagsText, setTagsText] = useState(initial.tags.join(', '))
   const [slugTouched, setSlugTouched] = useState(!!existing)
-  const [body, setBody] = useState('')
-  const [status, setStatus] = useState<string | null>(existing ? 'Loading…' : null)
+  const [status, setStatus] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    if (!existing) return
-    postsApi
-      .load(existing)
-      .then(({ meta, body }) => {
-        setMeta(meta)
-        setTagsText(meta.tags.join(', '))
-        setSlug(existing)
-        setBody(body)
-        setStatus(null)
-      })
-      .catch((e) => setStatus(String(e)))
-  }, [existing])
-
-  const set = <K extends keyof PostMeta>(k: K, v: PostMeta[K]) => setMeta((m) => ({ ...m, [k]: v }))
+  const set = <K extends keyof PostInput>(k: K, v: PostInput[K]) => setPost((p) => ({ ...p, [k]: v }))
   const onTitle = (t: string) => {
     set('title', t)
-    if (!slugTouched) setSlug(slugify(t))
+    if (!slugTouched) set('slug', slugify(t))
   }
 
   const save = async () => {
-    const tags = tagsText
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean)
+    const data = {
+      ...post,
+      tags: tagsText
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
+    }
+    setSaving(true)
     try {
-      await postsApi.save(slug, { ...meta, tags }, body)
-      if (existing && existing !== slug) await postsApi.remove(existing)
-      navigate(`/blog/${slug}`)
+      const saved = existing ? await postsApi.update(existing, data) : await postsApi.create(data)
+      await qc.invalidateQueries({ queryKey: ['posts'] })
+      await qc.invalidateQueries({ queryKey: ['post'] })
+      navigate(`/blog/${saved.slug}`)
     } catch (e) {
       setStatus(String(e))
+    } finally {
+      setSaving(false)
     }
   }
 
   const remove = async () => {
-    if (!existing || !confirm(`Delete ${existing}.mdx?`)) return
+    if (!existing || !confirm(`Delete "${post.title}"?`)) return
     await postsApi.remove(existing)
+    await qc.invalidateQueries({ queryKey: ['posts'] })
     navigate('/blog')
   }
 
@@ -67,41 +92,38 @@ export default function WritePage() {
           ← All posts
         </Link>
       </div>
-      <p className="text-sm text-ink/60 mt-2">
-        Saves to <code>frontend/src/posts/{slug || 'slug'}.mdx</code>. Commit to publish.
-      </p>
       {status && <Status>{status}</Status>}
 
       <div className="grid gap-4 mt-6 sm:grid-cols-[1fr_10rem]">
         <input
           className={field}
           placeholder="Title"
-          value={meta.title}
+          value={post.title}
           onChange={(e) => onTitle(e.target.value)}
         />
         <input
           className={field}
           type="date"
-          value={meta.date}
+          value={post.date}
           onChange={(e) => set('date', e.target.value)}
         />
         <input
           className={field}
           placeholder="slug"
-          value={slug}
+          value={post.slug}
           onChange={(e) => {
             setSlugTouched(true)
-            setSlug(slugify(e.target.value))
+            set('slug', slugify(e.target.value))
           }}
         />
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={meta.draft} onChange={(e) => set('draft', e.target.checked)} />
+          <input type="checkbox" checked={post.draft} onChange={(e) => set('draft', e.target.checked)} />
           Draft
         </label>
         <input
           className={field}
           placeholder="Excerpt"
-          value={meta.excerpt}
+          value={post.excerpt}
           onChange={(e) => set('excerpt', e.target.value)}
         />
         <input
@@ -115,8 +137,8 @@ export default function WritePage() {
       <div className="grid gap-6 mt-6 lg:grid-cols-2">
         <div data-color-mode="light">
           <MDEditor
-            value={body}
-            onChange={(v) => setBody(v ?? '')}
+            value={post.body}
+            onChange={(v) => set('body', v ?? '')}
             preview="edit"
             height={450}
             visibleDragbar={false}
@@ -125,17 +147,17 @@ export default function WritePage() {
           />
         </div>
         <div className="border border-neutral-200 rounded px-4 py-3 min-h-[28rem] overflow-auto">
-          <MdxPreview source={body} />
+          {post.body.trim() ? <Markdown>{post.body}</Markdown> : <Status>Preview</Status>}
         </div>
       </div>
 
       <div className="flex gap-4 mt-6 items-center">
         <button
           className="bg-accent text-white px-5 py-2 rounded text-sm uppercase tracking-widest disabled:opacity-40"
-          disabled={!meta.title || !slug || !body.trim()}
+          disabled={!post.title || !post.body.trim() || saving}
           onClick={save}
         >
-          Save
+          {saving ? 'Saving…' : post.draft ? 'Save draft' : 'Publish'}
         </button>
         {existing && (
           <button className="text-sm text-red-700 underline" onClick={remove}>
