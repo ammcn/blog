@@ -268,7 +268,19 @@ export default function ResumePage() {
         {education.length > 0 && (
           <div className="md:hidden">
             <Section title="Education">
-              <EducationList items={education} />
+              {education.map((e) => (
+                <Entry
+                  key={e.id}
+                  heading={[e.degree, e.field_of_study].filter(Boolean).join(', ')}
+                  subheading={`${e.institution} | ${fmtRange(e.start_date, e.end_date)}`}
+                >
+                  {e.description && (
+                    <Markdown className="mt-2 text-ink/70 [&_li::marker]:text-accent">
+                      {e.description}
+                    </Markdown>
+                  )}
+                </Entry>
+              ))}
             </Section>
           </div>
         )}
