@@ -51,7 +51,7 @@ everything else to the SPA. Both share one domain, so no CORS or cross-site cook
 
    ```sh
    cd backend
-   npx vercel env pull .env.local        # writes DATABASE_URL etc.
+   npx vercel env pull .env.local --environment=production
    set -a; source .env.local; set +a
    .venv/bin/python manage.py createsuperuser
    ```
