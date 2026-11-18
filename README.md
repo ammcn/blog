@@ -29,8 +29,10 @@ Edit resume content at http://localhost:8000/admin/.
 Sign in at `/secret-login` (not linked from the UI) with a Django user from
 `createsuperuser`. The nav then shows **Write**, and each post gets an **Edit**
 link. Posts are Markdown (GFM, syntax-highlighted code) stored in the database,
-so you can write and publish from the live site. Tick **Draft** to keep a post
-visible only to you. The Django admin at `/admin/` can edit posts too.
+so you can write and publish from the live site. The editor autosaves a second
+after you stop typing. A new post stays a draft, visible only to you, until you
+**Publish**. Edits to a published post save as a pending draft (**View draft**
+shows it) and go live only on **Publish changes**. The Django admin at `/admin/` can edit posts too.
 
 ## Deploying (Vercel)
 
@@ -63,6 +65,6 @@ Commit `frontend/public/photo.jpg` for the photo and OG image. `backend/Dockerfi
 ## API
 
 - `GET /api/resume/` — profile (with `socials`), experience, education, proficiencies
-- `GET /api/blog/posts/`, `GET /api/blog/posts/<slug>/` — published posts; drafts included for a signed-in session. `POST`, `PATCH`, `DELETE` need a session.
+- `GET /api/blog/posts/`, `GET /api/blog/posts/<slug>/` — published posts; drafts included for a signed-in session. `POST`, `PATCH`, `DELETE` need a session. `PATCH` on a published post stores the edits as pending; `?draft` overlays them on reads; `POST …/<slug>/publish/`, `unpublish/`, `discard/` act on them.
 - `GET /api/auth/me/`, `POST /api/auth/login/`, `POST /api/auth/logout/` — session auth
 - `GET /api/likes/?slugs=a,b` — heart counts; `POST /api/likes/<slug>/toggle/` toggles the caller's heart. Both read an anonymous `X-Client-Id` header the frontend keeps in localStorage.

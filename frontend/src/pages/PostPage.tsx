@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { usePost } from '../posts'
 import { Status, Sheet } from '../components/Section'
 import Markdown from '../components/Markdown'
@@ -9,8 +9,9 @@ import { useCanEdit } from '../auth'
 
 export default function PostPage() {
   const { slug } = useParams()
-  const { data: post, isPending, error } = usePost(slug)
   const canEdit = useCanEdit()
+  const draftView = useSearchParams()[0].has('draft') && canEdit
+  const { data: post, isPending, error } = usePost(slug, draftView)
   useTitle(post?.title)
 
   if (isPending)
@@ -34,11 +35,23 @@ export default function PostPage() {
             ← All posts
           </Link>
           {canEdit && (
-            <Link to={`/write/${post.slug}`} className="hover:text-ink">
-              Edit{post.draft && ' (draft)'}
-            </Link>
+            <span className="flex gap-4">
+              {post.has_pending && (
+                <Link to={draftView ? `/blog/${post.slug}` : `/blog/${post.slug}?draft`} className="hover:text-ink">
+                  {draftView ? 'View live' : 'View draft'}
+                </Link>
+              )}
+              <Link to={`/write/${post.slug}`} className="hover:text-ink">
+                Edit{post.draft && ' (draft)'}
+              </Link>
+            </span>
           )}
         </div>
+        {(post.draft || (draftView && post.has_pending)) && (
+          <p className="no-print mt-4 rounded border border-accent/40 bg-accent/5 px-3 py-2 text-sm text-ink/70">
+            {post.draft ? 'Draft — not published.' : 'Draft — unpublished changes to this post.'}
+          </p>
+        )}
         <header className="mt-4 mb-8 border-b border-neutral-300 pb-4">
           <h1 className="font-serif text-4xl">{post.title}</h1>
           <p className="text-sm text-ink/60 mt-2">

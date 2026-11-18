@@ -4,6 +4,8 @@ from django.utils.text import slugify
 
 
 class Post(models.Model):
+    DRAFTABLE = ['title', 'date', 'excerpt', 'tags', 'body']
+
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
     date = models.DateField(default=timezone.localdate)
@@ -11,6 +13,7 @@ class Post(models.Model):
     tags = models.JSONField(default=list, blank=True)
     body = models.TextField(blank=True, help_text='Markdown')
     draft = models.BooleanField(default=True)
+    pending = models.JSONField(null=True, blank=True, help_text='Unpublished edits to a published post')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

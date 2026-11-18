@@ -72,9 +72,11 @@ export interface PostSummary {
 
 export interface Post extends PostSummary {
   body: string
+  /** Signed-in only: a published post has unpublished edits. */
+  has_pending?: boolean
 }
 
-export type PostInput = Omit<Post, 'updated_at'>
+export type PostInput = Pick<Post, 'slug' | 'title' | 'date' | 'excerpt' | 'tags' | 'body'>
 
 const csrf = () => document.cookie.match(/(?:^|; )csrftoken=([^;]+)/)?.[1] ?? ''
 
@@ -93,8 +95,12 @@ async function send<T>(path: string, method: string, body?: unknown): Promise<T>
 
 export const postsApi = {
   list: () => get<PostSummary[]>('/blog/posts/'),
-  get: (slug: string) => get<Post>(`/blog/posts/${slug}/`),
+  /** `draft` overlays a published post's pending edits. */
+  get: (slug: string, draft = false) => get<Post>(`/blog/posts/${slug}/${draft ? '?draft' : ''}`),
   create: (data: PostInput) => send<Post>('/blog/posts/', 'POST', data),
-  update: (slug: string, data: Partial<PostInput>) => send<Post>(`/blog/posts/${slug}/`, 'PATCH', data),
+  update: (slug: string, data: Partial<PostInput>) => send<Post>(`/blog/posts/${slug}/?draft`, 'PATCH', data),
+  publish: (slug: string) => send<Post>(`/blog/posts/${slug}/publish/`, 'POST'),
+  unpublish: (slug: string) => send<Post>(`/blog/posts/${slug}/unpublish/`, 'POST'),
+  discard: (slug: string) => send<Post>(`/blog/posts/${slug}/discard/`, 'POST'),
   remove: (slug: string) => send<void>(`/blog/posts/${slug}/`, 'DELETE'),
 }

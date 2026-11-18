@@ -14,5 +14,6 @@ class PostAdmin(admin.ModelAdmin):
     form = PostForm
     list_display = ['title', 'date', 'draft', 'updated_at']
     list_filter = ['draft']
+    readonly_fields = ['pending']
     search_fields = ['title', 'body']
     prepopulated_fields = {'slug': ['title']}
